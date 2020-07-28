@@ -14,6 +14,9 @@ ui <- f7Page(
 	shinyjs::useShinyjs(),
 	inlineCSS(list(.orange = "background: orange")), # used to toggle start/stop buttons color
 	
+	includeScript(path = "js/NoSleep.min.js"),
+	includeScript(path = "js/nosleep.js"),
+	
 	init = f7Init(skin = "ios", theme = "dark"),
 	title = "Shiny Countdown", 
 	f7SingleLayout(
