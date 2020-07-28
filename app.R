@@ -9,13 +9,26 @@ library("shinyMobile")
 library(dplyr)
 library(lubridate)
 library(shinyjs)
+library(V8) #------------ needed for extendShinyjs()
+
+# code to call three times the sound alert function
+	
+	jscode <- "
+		shinyjs.alert = function(params) {
+		playAlert(params)
+		}"
+
 
 ui <- f7Page(
 	shinyjs::useShinyjs(),
+	
 	inlineCSS(list(.orange = "background: orange")), # used to toggle start/stop buttons color
 	
+	includeScript(path = "js/alert.js"),
 	includeScript(path = "js/NoSleep.min.js"),
 	includeScript(path = "js/nosleep.js"),
+	
+	extendShinyjs(text = jscode),
 	
 	init = f7Init(skin = "ios", theme = "dark"),
 	title = "Shiny Countdown", 
@@ -65,12 +78,13 @@ server <- function(input, output, session){
 	# 
 	timer <- reactiveVal(100) # set to 100 independent of select time
 	active <- reactiveVal(FALSE)
+	SecsFromSelector <- reactiveVal(0)
 	
 	observeEvent(input$selectMinutes, {
-		SecsFromMinutes <- as.numeric(minutes(input$selectMinutes)) # as.numeric(minutes(5)) returns 300
-		SecsFromHours <- as.numeric(hours(input$selectHours))
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) + as.numeric(hours(input$selectHours)))
+		
 		# set timer to seconds selected
-		timer(SecsFromMinutes + SecsFromHours) 
+		timer( SecsFromSelector() ) 
 		
 		updateF7Gauge(session, id = "gauge", 
 									#value = (timer()/input$selectMinutes/60)*100, 
@@ -80,10 +94,10 @@ server <- function(input, output, session){
 	
 	# separate observer to hours
 	observeEvent(input$selectHours, {
-		SecsFromMinutes <- as.numeric(minutes(input$selectMinutes)) # as.numeric(minutes(5)) returns 300
-		SecsFromHours <- as.numeric(hours(input$selectHours))
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) + as.numeric(hours(input$selectHours)))
+		
 		# set timer to seconds selected
-		timer(SecsFromMinutes + SecsFromHours) 
+		timer( SecsFromSelector() ) 
 		
 		updateF7Gauge(session, id = "gauge", 
 									#value = (timer()/input$selectMinutes/60)*100, 
@@ -92,21 +106,36 @@ server <- function(input, output, session){
 	})
 	# observer to manage active or inactive state of timer
 	observe({
-		invalidateLater(1000, session)
+		invalidateLater(100, session)
 		isolate({
 			if(active() )
 			{
-				timer(timer() - 1)
+				timer(timer() - 0.1)
+				#cat(timer(), "\n")
 				updateF7Gauge(session, 
 											id = "gauge", 
-											value = (timer()/input$selectMinutes/60)*100, 
-											labelText = paste(seconds_to_period( timer() )) )
+											value = (timer() / SecsFromSelector() ) * 100,
+											labelText = paste( round(seconds_to_period( timer() ), 0) )
+											)
 				if(timer() < 1)
 				{
 					active(FALSE)
+					
+					timer(0) # brute force set to 0 
+					updateF7Gauge(session, 
+												id = "gauge", 
+												value = (timer() / SecsFromSelector() ) * 100,
+												labelText = paste( round(seconds_to_period( timer() ), 0) )
+					)
 					f7Notif(text = "Time is up!", 
-									icon = f7Icon("alarm"), 
+									icon = NULL, #f7Icon("alarm"), 
+									closeTimeout = 6000,
 									session = session)
+					# try to play sound with alert.js
+					for (i in 1:5) {
+						Sys.sleep(0.5); js$alert('purr')
+					}
+					#cat(timer())
 				}
 			}
 		})
@@ -153,6 +182,7 @@ server <- function(input, output, session){
 									labelText = paste(seconds_to_period( timer() )) )
 	})
 	
+	# session$onSessionEnded(stopApp)
 }
 
 shiny::shinyApp(ui, server)
