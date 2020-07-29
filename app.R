@@ -39,6 +39,7 @@ ui <- f7Page(
 		f7Flex(
 			# https://framework7.io/docs/typography.html#flexbox
 			class = "flex-direction-column justify-content-center align-items-center",
+			#class = "flex-direction-column",
 			tags$hr(),
 			f7Gauge("gauge", 
 							value = 100, 
@@ -52,15 +53,26 @@ ui <- f7Page(
 							borderBgColor = "gray", 
 							borderWidth = 20),
 			tags$hr(),
-			h4("Minutes"),
-			f7Stepper(inputId = "selectMinutes", 
-								label = "", min = 1, max = 59, value = 5, 
-								size = "large", wraps = TRUE, raised = TRUE, fill = TRUE, color = "orange"),
-			h4("Hours"),
-			f7Stepper(inputId = "selectHours", 
-								label = "", min = 0, max = 24, value = 0, 
-								size = "large", wraps = TRUE, raised = TRUE, fill = TRUE, color = "orange"),
-		),
+			#h4("Minutes"),
+			f7Flex(
+				class ="justify-content-space-between align-content-space-between",
+				f7Slider("selectMinutes", min = 0, max = 9, value = 5, step = 1,
+								 color = "orange", label = "min 1x", vertical = T),
+				f7Slider("selectMinutes10x", min = 0, max = 50, value = 0, step = 10, 
+								 color = "orange", label = "min 10x", vertical = T),
+				f7Slider("selectHours", min = 0, max = 9, value = 0, step = 1,
+								 color = "orange", label = "hours", vertical = T),
+			)
+			),
+			
+		# 	f7Stepper(inputId = "selectMinutes", 
+		# 						label = "", min = 1, max = 59, value = 5, 
+		# 						size = "large", wraps = TRUE, raised = TRUE, fill = TRUE, color = "orange"),
+		# 	h4("Hours"),
+		# 	f7Stepper(inputId = "selectHours", 
+		# 						label = "", min = 0, max = 24, value = 0, 
+		# 						size = "large", wraps = TRUE, raised = TRUE, fill = TRUE, color = "orange"),
+		# ),
 		toolbar = f7Toolbar(f7Button(inputId = "start", label = "start", color = "green", rounded = FALSE, size = "large"),
 												f7Button(inputId = "pause", label = "pause", color = "gray", rounded = FALSE, size = "large"),
 												f7Button(inputId = "cancel", label = "cancel", color = "red", rounded = FALSE, size = "large"),
@@ -81,7 +93,10 @@ server <- function(input, output, session){
 	SecsFromSelector <- reactiveVal(0)
 	
 	observeEvent(input$selectMinutes, {
-		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) + as.numeric(hours(input$selectHours)))
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
+											as.numeric(minutes(input$selectMinutes10x)) +
+											as.numeric(hours(input$selectHours))
+										 )
 		
 		# set timer to seconds selected
 		timer( SecsFromSelector() ) 
@@ -92,9 +107,27 @@ server <- function(input, output, session){
 									)
 	})
 	
+	observeEvent(input$selectMinutes10x, {
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
+										 	as.numeric(minutes(input$selectMinutes10x)) +
+										 	as.numeric(hours(input$selectHours))
+		)
+		
+		# set timer to seconds selected
+		timer( SecsFromSelector() ) 
+		
+		updateF7Gauge(session, id = "gauge", 
+									#value = (timer()/input$selectMinutes/60)*100, 
+									labelText = paste(seconds_to_period( timer() )) # this automatically prints pretty times
+		)
+	})
+	
 	# separate observer to hours
 	observeEvent(input$selectHours, {
-		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) + as.numeric(hours(input$selectHours)))
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
+										 	as.numeric(minutes(input$selectMinutes10x)) +
+										 	as.numeric(hours(input$selectHours))
+		)
 		
 		# set timer to seconds selected
 		timer( SecsFromSelector() ) 
@@ -127,13 +160,12 @@ server <- function(input, output, session){
 												value = (timer() / SecsFromSelector() ) * 100,
 												labelText = paste( round(seconds_to_period( timer() ), 0) )
 					)
-					f7Notif(text = "Time is up!", 
-									icon = NULL, #f7Icon("alarm"), 
-									closeTimeout = 6000,
+					f7Dialog(text = "Time is up!", 
+									type = "alert",
 									session = session)
 					# try to play sound with alert.js
 					for (i in 1:5) {
-						Sys.sleep(0.5); js$alert('purr')
+						Sys.sleep(1); js$alert('purr')
 					}
 					#cat(timer())
 				}
