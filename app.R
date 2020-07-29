@@ -31,14 +31,14 @@ ui <- f7Page(
 	extendShinyjs(text = jscode),
 	
 	init = f7Init(skin = "ios", theme = "dark"),
-	title = "Shiny Countdown", 
+	title = "Shiny timer", 
 	f7SingleLayout(
 		navbar = f7Navbar(
-			title = "Shiny countdown timer", hairline = TRUE, shadow = FALSE
+			title = "Shiny timer", hairline = TRUE, shadow = FALSE
 			),
 		f7Flex(
 			# https://framework7.io/docs/typography.html#flexbox
-			class = "flex-direction-column justify-content-center align-items-center",
+			class = "flex-direction-column justify-content-center align-items-stretch",
 			#class = "flex-direction-column",
 			tags$hr(),
 			f7Gauge("gauge", 
@@ -51,11 +51,11 @@ ui <- f7Page(
 							labelTextColor = "orange",
 							borderColor = "orange", 
 							borderBgColor = "gray", 
-							borderWidth = 20),
+							borderWidth = 5),
 			tags$hr(),
 			#h4("Minutes"),
 			f7Flex(
-				class ="justify-content-space-between align-content-space-between",
+				#class ="justify-content-space-between align-content-space-between",
 				f7Slider("selectMinutes", min = 0, max = 9, value = 5, step = 1,
 								 color = "orange", label = "min 1x", vertical = T),
 				f7Slider("selectMinutes10x", min = 0, max = 50, value = 0, step = 10, 
@@ -150,11 +150,11 @@ server <- function(input, output, session){
 											value = (timer() / SecsFromSelector() ) * 100,
 											labelText = paste( round(seconds_to_period( timer() ), 0) )
 											)
-				if(timer() < 1)
+				if(timer() == 0)
 				{
 					active(FALSE)
 					
-					timer(0) # brute force set to 0 
+					#timer(0) # brute force set to 0 
 					updateF7Gauge(session, 
 												id = "gauge", 
 												value = (timer() / SecsFromSelector() ) * 100,
@@ -180,6 +180,7 @@ server <- function(input, output, session){
 		shinyjs::toggle("start") # hide start
 		shinyjs::toggle("pause") # show pause
 		shinyjs::disable("selectMinutes")
+		shinyjs::disable("selectMinutes10x")
 		shinyjs::disable("selectHours")
 	})
 	
@@ -202,11 +203,16 @@ server <- function(input, output, session){
 		shinyjs::hide("pause")
 		
 		shinyjs::enable("selectMinutes")
+		shinyjs::enable("selectMinutes10x")
 		shinyjs::enable("selectHours")
 		
-		SecsFromMinutes <- as.numeric(minutes(input$selectMinutes)) # as.numeric(minutes(5)) returns 300
-		SecsFromHours <- as.numeric(hours(input$selectHours))
-		timer(SecsFromMinutes + SecsFromHours)
+		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
+										 	as.numeric(minutes(input$selectMinutes10x)) +
+										 	as.numeric(hours(input$selectHours))
+		)
+		
+		timer( SecsFromSelector() )
+		
 		# reset gauge also
 		updateF7Gauge(session, 
 									id = "gauge", 
