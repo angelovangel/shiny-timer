@@ -54,15 +54,15 @@ ui <- f7Page(
 							borderWidth = 5),
 			tags$hr(),
 			#h4("Minutes"),
-			f7Flex(
+			#f7Flex(
 				#class ="justify-content-space-between align-content-space-between",
 				f7Slider("selectMinutes", min = 0, max = 9, value = 5, step = 1,
-								 color = "orange", label = "min 1x", vertical = T),
+								 color = "orange", label = "minutes", vertical = F),
 				f7Slider("selectMinutes10x", min = 0, max = 50, value = 0, step = 10, 
-								 color = "orange", label = "min 10x", vertical = T),
-				f7Slider("selectHours", min = 0, max = 9, value = 0, step = 1,
-								 color = "orange", label = "hours", vertical = T),
-			)
+								 color = "orange", label = "minutes 10x", vertical = F),
+				f7Slider("selectHours", min = 0, max = 24, value = 0, step = 1,
+								 color = "orange", label = "hours", vertical = F),
+			#)
 			),
 			
 		# 	f7Stepper(inputId = "selectMinutes", 
@@ -112,17 +112,17 @@ server <- function(input, output, session){
 										 	as.numeric(minutes(input$selectMinutes10x)) +
 										 	as.numeric(hours(input$selectHours))
 		)
-		
+
 		# set timer to seconds selected
-		timer( SecsFromSelector() ) 
-		
-		updateF7Gauge(session, id = "gauge", 
-									#value = (timer()/input$selectMinutes/60)*100, 
+		timer( SecsFromSelector() )
+
+		updateF7Gauge(session, id = "gauge",
+									#value = (timer()/input$selectMinutes/60)*100,
 									labelText = paste(seconds_to_period( timer() )) # this automatically prints pretty times
 		)
 	})
-	
-	# separate observer to hours
+	# 
+	# separate observer for hours
 	observeEvent(input$selectHours, {
 		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
 										 	as.numeric(minutes(input$selectMinutes10x)) +
@@ -150,7 +150,7 @@ server <- function(input, output, session){
 											value = (timer() / SecsFromSelector() ) * 100,
 											labelText = paste( round(seconds_to_period( timer() ), 0) )
 											)
-				if(timer() == 0)
+				if(timer() <= 0)
 				{
 					active(FALSE)
 					
@@ -207,8 +207,8 @@ server <- function(input, output, session){
 		shinyjs::enable("selectHours")
 		
 		SecsFromSelector(as.numeric(minutes(input$selectMinutes)) +
-										 	as.numeric(minutes(input$selectMinutes10x)) +
-										 	as.numeric(hours(input$selectHours))
+										 as.numeric(minutes(input$selectMinutes10x)) +
+										 as.numeric(hours(input$selectHours))
 		)
 		
 		timer( SecsFromSelector() )
