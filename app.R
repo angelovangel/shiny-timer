@@ -82,6 +82,7 @@ ui <- f7Page(
 
 
 server <- function(input, output, session){
+	session$allowReconnect(TRUE)
 	
 	# at start hide pause
 	shinyjs::toggle("pause")
@@ -165,7 +166,7 @@ server <- function(input, output, session){
 									session = session)
 					# try to play sound with alert.js
 					for (i in 1:5) {
-						Sys.sleep(1); js$alert('purr')
+						js$alert('purr'); Sys.sleep(1)
 					}
 					#cat(timer())
 				}
@@ -220,7 +221,6 @@ server <- function(input, output, session){
 									labelText = paste(seconds_to_period( timer() )) )
 	})
 	
-	# session$onSessionEnded(stopApp)
 }
 
 shiny::shinyApp(ui, server)
