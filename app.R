@@ -28,7 +28,7 @@ ui <- f7Page(
 	includeScript(path = "js/NoSleep.min.js"),
 	includeScript(path = "js/nosleep.js"),
 	
-	extendShinyjs(text = jscode),
+	extendShinyjs(text = jscode, functions = c("alert")),
 	
 	init = f7Init(skin = "ios", theme = "dark"),
 	title = "Shiny timer", 
@@ -61,7 +61,7 @@ ui <- f7Page(
 				f7Slider("selectMinutes10x", min = 0, max = 50, value = 0, step = 10, 
 								 color = "orange", label = "minutes 10x", vertical = F),
 				f7Slider("selectHours", min = 0, max = 24, value = 0, step = 1,
-								 color = "orange", label = "hours", vertical = F),
+								 color = "orange", label = "hours", vertical = F)
 			#)
 			),
 			
